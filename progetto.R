@@ -9,6 +9,7 @@ library(topicmodels)
 library(tidyr)
 library(wordcloud)
 
+# function to extract facebook posts
 estrai.post=function(politici) {
   result=rep(NA,length(politici))
   for (i in 1:length(politici)) {
@@ -18,6 +19,7 @@ estrai.post=function(politici) {
   result
 }
 
+# 5 different political parties
 m5s=c("beppegrillo.it","dibattista.alessandro","LuigiDiMaio","Paola.Taverna.M5S","roberto.fico.5",
       "nicola.morra.63","vitoclaudiocrimi","CarloMartelliM5sSenato","M5Scarlaruocco","BarbaraLezziPagina")
 pd=c("matteorenziufficiale","boschimariaelena","monicacirinna.it","andreaorlandosp","paginaDarioFranceschini",
@@ -28,7 +30,7 @@ fi=c("SilvioBerlusconi","michelavittoriabrambilla","CarfagnaMara","MariastellaGe
      "gasparri.it","nunziadegirolamo.ufficiale","simonebaldelli.it","deborah.bergamini","gabriella.giammanco")
 altri=c("giorgiameloni.paginaufficiale","PierLuigiBersani.PaginaUfficiale","giuseppecivati","angelinoalfano.it","giulianopisapia1")
 
-
+# each vector contains the posts of all the members of each party
 m5s_corp=estrai.post(m5s)
 pd_corp=estrai.post(pd)
 lega_corp=estrai.post(lega)
@@ -43,7 +45,7 @@ altri_corp=estrai.post(altri)
 ######## STEP 1 ########
 ########################
 
-# eliminazione NA
+# delete NA
 m5s_corp=str_replace_all(m5s_corp,"NA",'')
 pd_corp=str_replace_all(pd_corp,"NA",'')
 lega_corp=str_replace_all(lega_corp,"NA",'')
@@ -51,25 +53,25 @@ fi_corp=str_replace_all(fi_corp,"NA",'')
 altri_corp=str_replace_all(altri_corp,"NA",'')
 
 ################################
-#il file Rdata ha gia fatto i comadni precedenti
+# the previous commands have been already executed on the Rdata file
 ###############################
 
 
-# estrazione hashtag
+# extract hashtags
 hashtag_m5s=str_extract_all(m5s_corp, "#\\w+")
 hashtag_pd=str_extract_all(pd_corp, "#\\w+")
 hashtag_lega=str_extract_all(lega_corp, "#\\w+")
 hashtah_fi=str_extract_all(fi_corp, "#\\w+")
 hashtah_altri=str_extract_all(altri_corp, "#\\w+")
 
-# eliminazione hashtag
+# delete hashtags
 m5s_corp<-str_replace_all(m5s_corp, "#\\w+", '')
 pd_corp<-str_replace_all(pd_corp, "#\\w+", '')
 lega_corp<-str_replace_all(lega_corp, "#\\w+", '')
 fi_corp<-str_replace_all(fi_corp, "#\\w+", '')
 altri_corp<-str_replace_all(altri_corp, "#\\w+", '')
 
-# nomino i documenti
+# assign names to documents
 names(m5s_corp)=m5s
 names(pd_corp)=pd
 names(lega_corp)=lega
@@ -78,57 +80,60 @@ names(altri_corp)=altri
 
 library(tm)
 
+# to useful files for italians stopwords and proper nouns in italian language
 load("itastopwords.rda")
 load("vocabolarioNomiPropri.rda")
 
+# unify in a single corpus
 corp <- Corpus(VectorSource(c(m5s_corp,pd_corp,lega_corp,fi_corp,altri_corp)))
 
-# tolower
+# all characters to lower-case
 corp1 <- tm_map(corp, tolower)
 
-# rimuovo le stopwords di Finos
+# remove stopwords from "itastopwords.rda" file
 corp1 <- tm_map(corp1, removeWords, itastopwords)
 
-# rimuovo le stopwords di default di R
+# remove default R stopwords for italian language
 corp1 <- tm_map(corp1, removeWords, stopwords("italian"))
 
-# rimuovo i nomi propri
+# remove proper nouns
 corp1 <- tm_map(corp1, removeWords, row.names(vocabolarioNomiPropri))
 
-# rimuovo i numeri
+# remove numbers
 corp1 <- tm_map(corp1, removeNumbers)
 
-# rimuovo la punteggiatura
+# remove punctuation
 corp1 <- tm_map(corp1, removePunctuation)
 
-# rimuovo altri segni di punteggiatura che non vengono rimossi da removePunctuation
+# remove all the punctuation which is not removed by removePunctuation
 corp1 <- tm_map(corp1, removeWords,c("d'","l'","un'"))
 
-# elimino gli spazi bianchi delle stringhe rimosse
+# delete white spaces which originate from the removed strings
 corp1 <- tm_map(corp1, stripWhitespace)
 
-# rimuovo nomi partiti e altri caratteri del Web (http,www ecc)
+# remove political parties' names and other Web chars (http,www,ecc)
 corp1 <- tm_map(corp1,removeWords,c("movimento stelle","forza italia","lega nord","partito democratico","fratelli ditalia","fratelli italia","ms","pd","http","https","www"))
 
-# rimuovo parole che nei bigrammi sono inutili
+# remove words which are useless in the bigrams
 corp1 <- tm_map(corp1,removeWords,c("devono", "essere", "u", "fffd", "ancora", "volta", "tre", "due", "anni", "dopo", "aver","ultimi", "vuol","dire", "dovrebbe","qualche","giorno", "p", "vista", "punto", "n","mesi", "pochi", "migliaia", "milioni","piazza", "troppo", "tempo","streaming","stato","fatto","fare", "fra","poco","detto"))
 
 # Document Term Matrix 1
 dtm1=DocumentTermMatrix(corp1)
 inspect(dtm1)
-# 33925 parole (distinte) allo STEP 1 di pre-processing
+# 33925 (distinct) words at the STEP 1 of pre-processing
 
 ########################
 ######## STEP 2 ########
 ########################
 
-# individuazione bigrammi
+# find bigrams
 testo_unico<-as.character(corp1)[1]
 bigrams<-textcnt(testo_unico, n=2L, method="string")
 bigrams_freq<-bigrams[bigrams>30]
 bigrams_freq
 
-# funzioni utili
+# useful functions
+
 trasformaBigrammi<-function(testo, bigrammi)
 {
   for (i in 1:length(bigrammi))
@@ -147,7 +152,7 @@ pulisciCorpus<-function(corpus_politico)
   testo_pulito
 }
 
-# aggiungo i bigrammi ad ogni documento
+# add bigrams to every corpus
 m5s_1<-pulisciCorpus(corp1[1])
 m5s_2<-pulisciCorpus(corp1[2])
 m5s_3<-pulisciCorpus(corp1[3])
@@ -194,14 +199,14 @@ altri_3<-pulisciCorpus(corp1[43])
 altri_4<-pulisciCorpus(corp1[44])
 altri_5<-pulisciCorpus(corp1[45])
 
-# raggruppo i documenti
+# group documents
 m5s_corp<-c(m5s_1,m5s_2,m5s_3,m5s_4,m5s_5,m5s_6, m5s_7, m5s_8, m5s_9, m5s_10)
 pd_corp<-c(pd_1,pd_2,pd_3,pd_4,pd_5,pd_6,pd_7,pd_8, pd_9,pd_10)
 lega_corp<-c(lega_1,lega_2,lega_3,lega_4,lega_5,lega_6,lega_7,lega_8,lega_9,lega_10)
 fi_corp<-c(fi_1,fi_2,fi_3,fi_4,fi_5,fi_6,fi_7,fi_8,fi_9,fi_10)
 altri_corp<-c(altri_1,altri_2,altri_3,altri_4, altri_5)
 
-# nomino i documenti
+# assign a name to documents
 m5s<-c("Grillo","Di Battista", "Di Maio", "Taverna", "Fico", "Morra", "Crimi", "Martelli", "Ruocco", "Lezzi")
 pd<-c("Renzi", "Boschi", "Cirinna", "Orlando", "Franceschini", "Cuperlo", "Orfini", "Martina", "Zampa","Grasso")
 lega<-c("Salvini", "Fedriga","Busin","Caparini","Calderoli","Moleni","Boreghezio","Girmoldi","Ciocca","Saltamarini")
@@ -214,14 +219,14 @@ names(lega_corp)=lega
 names(fi_corp)=fi
 names(altri_corp)=altri
 
-# corpus con i bigrammi
+# corp2 has also the bigrams
 corp2 <- Corpus(VectorSource(c(m5s_corp,pd_corp,lega_corp,fi_corp,altri_corp)))
 
 # Document Term Matrix 2
 dtm2=DocumentTermMatrix(corp2,control = list(minWordLength=2))
 inspect(dtm2)
-# 34051 parole (distinte) allo STEP 2 di pre-processing
-# 126 in più rispetto allo STEP 1
+# 34051 (distinct) words at the STEP 2 of pre-processing
+# 126 more than STEP 1
 
 ########################
 ######## STEP 3 ########
@@ -230,12 +235,12 @@ inspect(dtm2)
 library(tm)
 library(topicmodels)
 
-# rimuovo i termini sparsi
+# remove sparse terms
 
 dtm2.sparse<-removeSparseTerms(dtm2, 1-(10/45))
 inspect(dtm2.sparse)
 
-# SUPERIORMENTE: elemino le parole più frequenti (quelle contenute nel quantile maggiore di 0.975)
+# UPPER-BOUND: remove the most frequent words (i.e. those whose percentile is greater than 0.975)
 mat_dtm<-as.matrix(dtm2.sparse)
 freq_parole<-colSums(mat_dtm)
 soglia=quantile(freq_parole, prob=0.975)
@@ -247,21 +252,21 @@ freq_parole[order(freq_parole, decreasing = T)][1:100]
 troppo_freq<-names(freq_parole[freq_parole>soglia])
 troppo_freq
 
-# rimuovo le parole contenute in troppo_freq da corp2
+# remove words contained in troppo_freq from corp2
 corp3 <- tm_map(corp2,removeWords,troppo_freq)
 
 # Document Term Matrix 3
 dtm3 <- DocumentTermMatrix(corp3,control = list(minWordLength=2))
 inspect(dtm3)
 
-# INFERIORMENTE: elimino le parole presenti in meno di 10 documenti
+# LOWER-BOUND: remove rare words (i.e. those who appear in less than 10 documents)
 dtm3<-removeSparseTerms(dtm3, 1-(10/45))
 inspect(dtm3)
-# 2814 parole (distinte) alla fine dello STEP 3 di pre-processing
-# 72 rimosse SUPERIORMENTE
-# 31163 rimosse INFERIORMENTE
+# 2814 (distinct) words at the end of the STEP 3 of pre-processing
+# 72 removed from UPPER-BOUND
+# 31163 removed from LOWER-BOUND
 
-## ottengo il corpus con 2814 parole
+## the final corpus has 2814 words
 dtm2list <- apply(dtm3, 1, function(x) {
   paste(rep(names(x), x), collapse=" ")
 })
@@ -269,21 +274,20 @@ dtm2list <- apply(dtm3, 1, function(x) {
 corp3 <- Corpus(VectorSource(dtm2list))
 inspect(corp3)
 inspect(DocumentTermMatrix(corp3,control=list(minWordLength=2)))
-# ok
 
 ################################
-######### MODELLO LDA ########## 
+########## LDA MODEL ########### 
 ################################
 
 library(tidytext)
 library(ggplot2)
 library(dplyr)
 
-# per semplicità
+# for the sake of simplicity
 corp.temp=corp3
 dtm=dtm3
 
-# FUNZIONI UTILI
+# useful functions
 
 stampa.risultati=function(dtm_lda) {
   
@@ -324,11 +328,11 @@ top_words_politici=function(partito) {
   }
 }
 
-dtm_lda_walter=aggiorna.risultati(c("secondo","dice","settimana","fino","avanti","dobbiamo","adesso","nuovo","viene","avere","caso", "aspetto","sabato","quel","venite","fratellid","forzaitalia","vogliamo","quel","sotto","diciamo", "dobbiamo","nuova","importante","soprattutto","quindi","alcuni","quasi","fonte","sera","amici","vogliono","tanto","possiamo","tante","merito","nessuno","stesso","subito","buona","presentato","infatti","primo","circa","stesso","possono","grandi","dichiara","intervista","bisogno","senso","vengono","qualcuno","progetto","chiede","tema","intervento","vediamo","sfida","tornare","proposta","domenica","forse","molti","davvero","tutta","partire","nuove","risposta","post","questione","nulla","fine","mettere","voce","parlare","propria","vero","chiedere","chiediamo","massima","italiana","minori","italiano","pensare","ospite","senatore","ovvero","posto","poter","altra","persona","battaglia","prodotti","spero","ciò","mila","ovvero","napoli","serve","rai","giornata","verona","idee","orlando","berlusconi","gennaio","ospite","pubblica","dato","verità","maio", "raggi", "leggi", "attività", "centrodestra", "storia", "venerdì", "responsabilità", "interrogazione","marzo", "gruppo","favore", "rete", "programma", "comunicato", "oppure", "cioè","almeno"),k=7)
+dtm_lda_walter=aggiorna.risultati(c("secondo","dice","settimana","fino","avanti","dobbiamo","adesso","nuovo","viene","avere","caso", "aspetto","sabato","quel","venite","fratellid","forzaitalia","vogliamo","quel","sotto","diciamo", "dobbiamo","nuova","importante","soprattutto","quindi","alcuni","quasi","fonte","sera","amici","vogliono","tanto","possiamo","tante","merito","nessuno","stesso","subito","buona","presentato","infatti","primo","circa","stesso","possono","grandi","dichiara","intervista","bisogno","senso","vengono","qualcuno","progetto","chiede","tema","intervento","vediamo","sfida","tornare","proposta","domenica","forse","molti","davvero","tutta","partire","nuove","risposta","post","questione","nulla","fine","mettere","voce","parlare","propria","vero","chiedere","chiediamo","massima","italiana","minori","italiano","pensare","ospite","senatore","ovvero","posto","poter","altra","persona","battaglia","prodotti","spero","ci?","mila","ovvero","napoli","serve","rai","giornata","verona","idee","orlando","berlusconi","gennaio","ospite","pubblica","dato","verit?","maio", "raggi", "leggi", "attivit?", "centrodestra", "storia", "venerd?", "responsabilit?", "interrogazione","marzo", "gruppo","favore", "rete", "programma", "comunicato", "oppure", "cio?","almeno"),k=7)
 dtm_lda_walter2=aggiorna.risultati(c("miliardieuro"),k=7)
 stampa.risultati(dtm_lda_walter)
 
-# Selezione modello (partendo da k=10)
+# Select model (starting with k=10)
 
 # 1)
 dtm_lda1=LDA(dtm,k=2,control = list(seed = 1234))
@@ -397,21 +401,21 @@ dtm_lda14=aggiorna.risultati(c("posto","poter","altra","persona","battaglia","pr
 stampa.risultati(dtm_lda14)
 
 #14 
-dtm_lda14=aggiorna.risultati(c("ciò","mila","ovvero","napoli","serve","rai","giornata","verona","idee","orlando","berlusconi","gennaio","ospite","pubblica","dato","verità"),k=7)
+dtm_lda14=aggiorna.risultati(c("ci?","mila","ovvero","napoli","serve","rai","giornata","verona","idee","orlando","berlusconi","gennaio","ospite","pubblica","dato","verit?"),k=7)
 stampa.risultati(dtm_lda14)
 
 #15 
-dtm_lda14=aggiorna.risultati(c( "leggi", "attività", "centrodestra", "storia", "venerdì", "maio", "raggi","responsabilità", "interrogazione","marzo", "gruppo"),k=7)
+dtm_lda14=aggiorna.risultati(c( "leggi", "attivit?", "centrodestra", "storia", "venerd?", "maio", "raggi","responsabilit?", "interrogazione","marzo", "gruppo"),k=7)
 stampa.risultati(dtm_lda14)
 
 #16 
-dtm_lda14=aggiorna.risultati(c("favore", "rete", "programma", "comunicato", "oppure", "cioè","almeno"),k=7)
+dtm_lda14=aggiorna.risultati(c("favore", "rete", "programma", "comunicato", "oppure", "cio?","almeno"),k=7)
 stampa.risultati(dtm_lda14)
 
 
 ###########
 
-# proviamo con k=7
+# try with k=7
 dtm_lda_7=aggiorna.risultati(c("grillo"),k=7)
 
 stampa.risultati(dtm_lda_7)
@@ -421,14 +425,18 @@ stampa.risultati(dtm_lda_7)
 
 
 ###################################
-#scelgo il modello dtm_lda_7
+# choose the model dtm_lda_7
 ####################################
 
 dtm_lda_finale<-dtm_lda_7
 
 
-#mi creo funzione per confronto tra topic
-#parametri: modello, numero del primo topic da confrontare, numero secondo topic da confrontre, soglia per cui prendere le parole, i due titoli da inserire nel grafico
+# the function to compare topics
+# parameters:
+# - model
+# - topics to be compared (between 1 and 7)
+# - thresholds (lower-bound) for beta parameter
+# - titles to be printed in the final plot
 confrontaTopic<-function(modello, n1, n2, soglia1=0.001,soglia2=0.001, titolo1=n1, titolo2=n2)
 {
   ap_topic<-tidy(modello, matrix="beta")
@@ -456,7 +464,7 @@ confrontaTopic(dtm_lda_finale,3,5,0.0013,0.0018, "Topic 3", "Topic 5")
 confrontaTopic(dtm_lda_finale,1,7,0.0019,0.0021, "Topic 1", "Topic 7")
 
 ##################
-#distribuzione dei topic sui politici
+# distributions of topics among politicians
 #################
 
 gamma <- tidy(dtm_lda_finale, matrix = "gamma")
@@ -507,7 +515,7 @@ ggplot(df, aes(x=df$Politico, y=df$Gamma,fill=factor(df$Topic,levels=mieitopic))
   coord_flip()
 
 ################################
-#distanze tra politici per argomenti trattati
+# distances between politicians (based on topics covered)
 #############################
 
 distanze<-c()
