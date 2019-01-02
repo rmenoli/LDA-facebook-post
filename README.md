@@ -22,4 +22,4 @@ Stemming was not performed, in order to improve the interpretability of the LDA 
 The function used for fitting the LDA model was "LDA" implemented in the R library "topicmodels".
 
 ## Results
-![alt text](https://github.com/rmenoli/LDA-facebook-post/blob/master/images/Result1.pdf)
+![alt text](https://github.com/rmenoli/LDA-facebook-post/blob/master/images/Result1.png)
