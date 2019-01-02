@@ -22,4 +22,35 @@ Stemming was not performed, in order to improve the interpretability of the LDA 
 The function used for fitting the LDA model was "LDA" implemented in the R library "topicmodels".
 
 ## Results
+### Distribution of the top-10 words for each topic
+The final LDA model has 7 topics. 
+The figure below shows the distribution of the top-10 words among the 7 topics. As an example take the word "clandestini" ("stowaways" in english), which is the most probable word in Topic 4 (beta = 0.00643) and in Topic 2 (beta = 0.0118).
 ![alt text](https://github.com/rmenoli/LDA-facebook-post/blob/master/images/Result1.png)
+Given the top-10 words for each topic, we can naturally assign a label to each topic:
+- Topic 1: EU affairs
+- Topic 2: Protest against immigration
+- Topic 3: Democratic primary elections
+- Topic 4: Organization of migration flows
+- Topic 5: Protest against establishment
+- Topic 6: Social issues
+- Topic 7: Italian politics
+
+### Distribution of topics for each politician
+The figure below plots the distribution of topics (i.e. gamma) among the 45 politicians, grouped by their political party (Movimento 5 Stelle, Partito Democratico, Lega Nord, Fratelli d'Italia, Others). Politicians belonging to Movimento 5 Stelle homogeneously focus on Topic 4 (Organization of migration flows). Moreover, Topic 6 (Social issues) is addressed by Brambilla (animal rights activist), Meloni (nationalist) and Saltamarini (maternity protection activist).
+![alt text](https://github.com/rmenoli/LDA-facebook-post/blob/master/images/Result2.png)
+
+### Most representative words for each topic
+It is useful to compare micro-topics which address different issues of the same macro-topic, e.g. Topic 2 and Topic 4 both regard immigration issues, but from different perspectives.
+Therefore, the first task was to understand which are the most discriminative words for Topic 2, when compared to Topic 4. This can be obtained by computing, for each word, the log-ratio of the two values stored in the beta matrix, taking the biggest and finally plotting them in a paired word-cloud.
+![alt text](https://github.com/rmenoli/LDA-facebook-post/blob/master/images/Result3.png)
+
+## Conclusions
+Advantages of LDA:
+- Flexibility (the same word can be assigned to multiple topics)
+- Generality (high-level picture of politicians' debate in Italy) 
+- Granularity (lower-level picture of differences in topics among politicians belonging to the same party)
+
+Disadvantages of LDA:
+- Choose number of topics (since LDA is an unsupervised method)
+- Model assumptions (LDA assumes independence between topics, while Correlated Topic Model assumes correlation between topics, which is more reasonable in this context)
+
